@@ -24,3 +24,14 @@ web_custom_versions/
 openapi.yaml
 filtered-openapi.yaml
 uv.lock
+# Whitelist TAESD VAE approximations used for optional high-quality previews
+# These files are only required if preview mode is set to "TAESD" in ComfyUI settings
+!/models/vae_approx/
+!/models/vae_approx/taef1_decoder.safetensors
+!/models/vae_approx/taef1_encoder.safetensors
+!/models/vae_approx/taesd3_decoder.safetensors
+!/models/vae_approx/taesd3_encoder.safetensors
+!/models/vae_approx/taesdxl_decoder.safetensors
+!/models/vae_approx/taesdxl_encoder.safetensors
+!/models/vae_approx/taesd_decoder.safetensors
+!/models/vae_approx/taesd_encoder.safetensors
