@@ -698,8 +698,10 @@ class PromptServer():
                     try:
                         running, queued = self.prompt_queue.get_current_queue_volatile()
                         pending = len(queued)
+                        logging.info("----------- Prompt start -----------")
                         logging.info(f"Prompt accepted; queued={pending}.")
                     except Exception:
+                        logging.info("----------- Prompt start -----------")
                         logging.info("Prompt accepted; queued.")
                     response = {"prompt_id": prompt_id, "number": number, "node_errors": valid[3]}
                     return web.json_response(response)

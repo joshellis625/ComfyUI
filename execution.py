@@ -746,6 +746,7 @@ class PromptExecutor:
                     logging.info(f"Prompt completed successfully: {elapsed:.1f}s ({pretty})")
                 else:
                     logging.info(f"Prompt failed: {elapsed:.1f}s ({pretty})")
+                logging.info("------------ Prompt end ------------")
             except Exception:
                 pass
             if comfy.model_management.DISABLE_SMART_MEMORY:
