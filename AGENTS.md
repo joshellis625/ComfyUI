@@ -22,6 +22,36 @@ This file tells automation (Codex, etc.) how to behave in **this fork**. Keep it
 6. Publish: `git push -u origin sync-upstream`
 7. Promote: `git switch master && git merge --ff-only sync-upstream && git push origin master`
 
+## Fork Update Process (Simplified)
+
+Whenever I say “update fork,” follow these exact steps:
+
+1. Fetch upstream:
+   git fetch upstream
+
+2. Create or reset the staging branch:
+   git checkout -B sync-upstream master
+
+3. Merge upstream changes:
+   git merge upstream/master
+
+4. Restore protected files:
+   git checkout origin/master -- requirements.txt
+   git checkout origin/master -- models/vae_approx || true
+   git commit --no-edit || true
+
+5. Fast-forward master and push:
+   git switch master
+   git merge --ff-only sync-upstream
+   git push origin master
+
+6. (Optional) Clean up the staging branch:
+   git branch -d sync-upstream
+
+---
+
+This way, every sync is the same: safe branch first, protect local files, fast-forward master, push. No PRs, no guesswork.
+
 ## Local Run
 - Create venv, install: `python -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt`
 - Launch: `python main.py --listen --port 8188`
