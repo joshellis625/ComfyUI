@@ -732,9 +732,16 @@ class PromptExecutor:
             # Log a concise completion line with human-friendly duration
             try:
                 elapsed = time.perf_counter() - run_start_time
-                minutes = int(elapsed // 60)
-                seconds = int(elapsed % 60)
-                pretty = f"{minutes}m {seconds}s" if minutes > 0 else f"{seconds}s"
+                hours = int(elapsed // 3600)
+                rem = elapsed % 3600
+                minutes = int(rem // 60)
+                seconds = int(rem % 60)
+                if hours > 0:
+                    pretty = f"{hours}h {minutes}m {seconds}s"
+                elif minutes > 0:
+                    pretty = f"{minutes}m {seconds}s"
+                else:
+                    pretty = f"{seconds}s"
                 if self.success:
                     logging.info(f"Execution success: {elapsed:.1f}s ({pretty})")
                 else:
