@@ -204,12 +204,12 @@ def prompt_worker(q, server_instance):
             current_time = time.perf_counter()
             execution_time = current_time - execution_start_time
 
-            # Log Time in a more readable way after 10 minutes
+            # Legacy completion logs are noisy compared to the new concise line; keep at debug.
             if execution_time > 600:
-                execution_time = time.strftime("%H:%M:%S", time.gmtime(execution_time))
-                logging.info(f"Prompt executed in {execution_time}")
+                execution_time_fmt = time.strftime("%H:%M:%S", time.gmtime(execution_time))
+                logging.debug(f"Prompt executed in {execution_time_fmt}")
             else:
-                logging.info("Prompt executed in {:.2f} seconds".format(execution_time))
+                logging.debug("Prompt executed in {:.2f} seconds".format(execution_time))
 
         flags = q.get_flags()
         free_memory = flags.get("free_memory", False)

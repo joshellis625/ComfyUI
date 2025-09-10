@@ -695,7 +695,12 @@ class PromptServer():
                 if valid[0]:
                     outputs_to_execute = valid[2]
                     self.prompt_queue.put((number, prompt_id, prompt, extra_data, outputs_to_execute))
-                    logging.info("Prompt accepted; queued.")
+                    try:
+                        running, queued = self.prompt_queue.get_current_queue_volatile()
+                        pending = len(queued)
+                        logging.info(f"Prompt accepted; queued={pending}.")
+                    except Exception:
+                        logging.info("Prompt accepted; queued.")
                     response = {"prompt_id": prompt_id, "number": number, "node_errors": valid[3]}
                     return web.json_response(response)
                 else:
