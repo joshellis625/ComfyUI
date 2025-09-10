@@ -649,6 +649,7 @@ class PromptExecutor:
         asyncio.run(self.execute_async(prompt, prompt_id, extra_data, execute_outputs))
 
     async def execute_async(self, prompt, prompt_id, extra_data={}, execute_outputs=[]):
+        run_start_time = time.perf_counter()
         nodes.interrupt_processing(False)
 
         if "client_id" in extra_data:
@@ -685,6 +686,7 @@ class PromptExecutor:
             for node_id in list(execute_outputs):
                 execution_list.add_node(node_id)
 
+            logged_first_node = False
             while not execution_list.is_empty():
                 node_id, error, ex = await execution_list.stage_node_execution()
                 if error is not None:
@@ -692,6 +694,14 @@ class PromptExecutor:
                     break
 
                 assert node_id is not None, "Node ID should not be None at this point"
+                if not logged_first_node:
+                    try:
+                        class_type = dynamic_prompt.original_prompt[node_id]["class_type"]
+                        display_name = nodes.NODE_DISPLAY_NAME_MAPPINGS.get(class_type, class_type)
+                        logging.info(f"Execution started: first node {node_id} ({display_name})")
+                    except Exception:
+                        logging.info(f"Execution started: first node {node_id}")
+                    logged_first_node = True
                 result, error, ex = await execute(self.server, dynamic_prompt, self.caches, node_id, extra_data, executed, prompt_id, execution_list, pending_subgraph_results, pending_async_nodes)
                 self.success = result != ExecutionResult.FAILURE
                 if result == ExecutionResult.FAILURE:
@@ -718,6 +728,19 @@ class PromptExecutor:
                 "meta": meta_outputs,
             }
             self.server.last_node_id = None
+
+            # Log a concise completion line with human-friendly duration
+            try:
+                elapsed = time.perf_counter() - run_start_time
+                minutes = int(elapsed // 60)
+                seconds = int(elapsed % 60)
+                pretty = f"{minutes}m {seconds}s" if minutes > 0 else f"{seconds}s"
+                if self.success:
+                    logging.info(f"Execution success: {elapsed:.1f}s ({pretty})")
+                else:
+                    logging.info(f"Execution failed: {elapsed:.1f}s ({pretty})")
+            except Exception:
+                pass
             if comfy.model_management.DISABLE_SMART_MEMORY:
                 comfy.model_management.unload_all_models()
 

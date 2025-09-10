@@ -662,7 +662,8 @@ class PromptServer():
 
         @routes.post("/prompt")
         async def post_prompt(request):
-            logging.info("got prompt")
+            # More helpful receipt message; actual execution start is logged later
+            # in the executor when the first node is scheduled.
             json_data =  await request.json()
             json_data = self.trigger_on_prompt(json_data)
 
@@ -694,10 +695,19 @@ class PromptServer():
                 if valid[0]:
                     outputs_to_execute = valid[2]
                     self.prompt_queue.put((number, prompt_id, prompt, extra_data, outputs_to_execute))
+                    logging.info("Prompt accepted; queued.")
                     response = {"prompt_id": prompt_id, "number": number, "node_errors": valid[3]}
                     return web.json_response(response)
                 else:
-                    logging.warning("invalid prompt: {}".format(valid[1]))
+                    try:
+                        err_msg = valid[1].get("message", "invalid prompt")
+                        err_details = valid[1].get("details", "")
+                        if err_details:
+                            logging.warning(f"Prompt rejected: {err_msg} — {err_details}")
+                        else:
+                            logging.warning(f"Prompt rejected: {err_msg}")
+                    except Exception:
+                        logging.warning("Prompt rejected: invalid prompt")
                     return web.json_response({"error": valid[1], "node_errors": valid[3]}, status=400)
             else:
                 error = {
