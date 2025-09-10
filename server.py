@@ -703,7 +703,7 @@ class PromptServer():
                         err_msg = valid[1].get("message", "invalid prompt")
                         err_details = valid[1].get("details", "")
                         if err_details:
-                            logging.warning(f"Prompt rejected: {err_msg} — {err_details}")
+                            logging.warning(f"Prompt rejected: {err_msg} - {err_details}")
                         else:
                             logging.warning(f"Prompt rejected: {err_msg}")
                     except Exception:
