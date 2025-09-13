@@ -1408,3 +1408,55 @@ class QwenImage(BaseModel):
         if ref_latents is not None:
             out['ref_latents'] = list([1, 16, sum(map(lambda a: math.prod(a.size()), ref_latents)) // 16])
         return out
+
+class HunyuanImage21(BaseModel):
+    def __init__(self, model_config, model_type=ModelType.FLOW, device=None):
+        super().__init__(model_config, model_type, device=device, unet_model=comfy.ldm.hunyuan_video.model.HunyuanVideo)
+
+    def extra_conds(self, **kwargs):
+        out = super().extra_conds(**kwargs)
+        attention_mask = kwargs.get("attention_mask", None)
+        if attention_mask is not None:
+            if torch.numel(attention_mask) != attention_mask.sum():
+                out['attention_mask'] = comfy.conds.CONDRegular(attention_mask)
+        cross_attn = kwargs.get("cross_attn", None)
+        if cross_attn is not None:
+            out['c_crossattn'] = comfy.conds.CONDRegular(cross_attn)
+
+        conditioning_byt5small = kwargs.get("conditioning_byt5small", None)
+        if conditioning_byt5small is not None:
+            out['txt_byt5'] = comfy.conds.CONDRegular(conditioning_byt5small)
+
+        guidance = kwargs.get("guidance", 6.0)
+        if guidance is not None:
+            out['guidance'] = comfy.conds.CONDRegular(torch.FloatTensor([guidance]))
+
+        return out
+
+class HunyuanImage21Refiner(HunyuanImage21):
+    def concat_cond(self, **kwargs):
+        noise = kwargs.get("noise", None)
+        image = kwargs.get("concat_latent_image", None)
+        noise_augmentation = kwargs.get("noise_augmentation", 0.0)
+        device = kwargs["device"]
+
+        if image is None:
+            shape_image = list(noise.shape)
+            image = torch.zeros(shape_image, dtype=noise.dtype, layout=noise.layout, device=noise.device)
+        else:
+            image = utils.common_upscale(image.to(device), noise.shape[-1], noise.shape[-2], "bilinear", "center")
+            image = self.process_latent_in(image)
+            image = utils.resize_to_batch_size(image, noise.shape[0])
+            if noise_augmentation > 0:
+                generator = torch.Generator(device="cpu")
+                generator.manual_seed(kwargs.get("seed", 0) - 10)
+                noise = torch.randn(image.shape, generator=generator, dtype=image.dtype, device="cpu").to(image.device)
+                image = noise_augmentation * noise + min(1.0 - noise_augmentation, 0.75) * image
+            else:
+                image = 0.75 * image
+        return image
+
+    def extra_conds(self, **kwargs):
+        out = super().extra_conds(**kwargs)
+        out['disable_time_r'] = comfy.conds.CONDConstant(True)
+        return out
