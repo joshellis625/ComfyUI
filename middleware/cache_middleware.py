@@ -26,6 +26,15 @@ async def cache_control(
     """Cache control middleware that sets appropriate cache headers based on file type and response status"""
     response: web.Response = await handler(request)
 
+    # Never cache settings endpoints (including /api prefix). Safari may cache these aggressively.
+    if request.path.startswith("/settings") or request.path.startswith("/api/settings"):
+        response.headers.setdefault("Cache-Control", "no-store, no-cache, must-revalidate")
+        response.headers.setdefault("Pragma", "no-cache")
+        response.headers.setdefault("Expires", "0")
+        # Future-proofing for multi-user: different users should not share cached settings
+        response.headers.setdefault("Vary", "Comfy-User")
+        return response
+
     if (
         request.path.endswith(".js")
         or request.path.endswith(".css")
